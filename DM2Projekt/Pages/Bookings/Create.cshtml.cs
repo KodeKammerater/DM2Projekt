@@ -35,30 +35,36 @@ namespace DM2Projekt.Pages.Bookings
         // For more information, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
         {
-            //if (!ModelState.IsValid)
+           // if (!ModelState.IsValid)
             //{
-            //    return Page();
+              //  return Page();
             //}
+
+            // Tjek at varigheden ikke overstiger 2 timer
+            TimeSpan bookingLength = Booking.EndTime - Booking.StartTime;
+            if (bookingLength.TotalHours > 2)
+            {
+                ModelState.AddModelError(string.Empty, "En booking må maksimalt vare 2 timer.");
+                return Page();
+            }
+
+            // Tjek for overlap med eksisterende bookinger
+            bool overlaps = _context.Booking.Any(b =>
+                b.RoomId == Booking.RoomId &&
+                ((Booking.StartTime >= b.StartTime && Booking.StartTime < b.EndTime) ||
+                 (Booking.EndTime > b.StartTime && Booking.EndTime <= b.EndTime) ||
+                 (Booking.StartTime <= b.StartTime && Booking.EndTime >= b.EndTime)));
+
+            if (overlaps)
+            {
+                ModelState.AddModelError(string.Empty, "Lokalet er allerede booket i det valgte tidsrum.");
+                return Page();
+            }
 
             _context.Booking.Add(Booking);
             await _context.SaveChangesAsync();
 
             return RedirectToPage("./Index");
         }
-
-        public JsonResult OnGetSmartboardsByRoom(int roomId)
-        {
-            var smartboards = _context.Smartboard
-                .Where(sb => sb.RoomId == roomId && sb.IsAvailable == true)
-                .Select(sb => new
-                {
-                    sb.SmartboardId,
-                    Display = $"Smartboard {sb.SmartboardId}"
-                })
-                .ToList();
-
-            return new JsonResult(smartboards);
-        }
-
     }
 }
