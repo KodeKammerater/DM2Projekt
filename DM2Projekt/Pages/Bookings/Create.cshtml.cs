@@ -56,14 +56,13 @@ namespace DM2Projekt.Pages.Bookings
                 return Page();
             }
 
-
             // Reapply dropdowns to prevent null ViewData on form redisplay
             ViewData["GroupId"] = new SelectList(_context.Group, "GroupId", "GroupName");
             ViewData["RoomId"] = new SelectList(_context.Room, "RoomId", "RoomName");
             ViewData["SmartboardId"] = new SelectList(_context.Smartboard, "SmartboardId", "SmartboardId");
             ViewData["CreatedByUserId"] = new SelectList(_context.User, "UserId", "Email");
 
-            // Extra safety check (not strictly needed with fixed intervals, but safe to keep)
+            // Extra safety check
             TimeSpan bookingLength = Booking.EndTime - Booking.StartTime;
             if (bookingLength.TotalHours > 2)
             {
@@ -71,16 +70,18 @@ namespace DM2Projekt.Pages.Bookings
                 return Page();
             }
 
-            // Prevent multiple active bookings for the same group
-            bool groupHasActiveBooking = _context.Booking
-                .Any(b => b.GroupId == Booking.GroupId && b.EndTime > DateTime.Now);
+            // Prevent group from booking multiple rooms at the same time
+            bool groupHasOverlappingBooking = _context.Booking
+                .Any(b =>
+                    b.GroupId == Booking.GroupId &&
+                    b.StartTime < Booking.EndTime &&
+                    b.EndTime > Booking.StartTime);
 
-            if (groupHasActiveBooking)
+            if (groupHasOverlappingBooking)
             {
-                ModelState.AddModelError(string.Empty, "This group already has an active booking.");
+                ModelState.AddModelError(string.Empty, "This group already has a booking at this time.");
                 return Page();
             }
-
 
             _context.Booking.Add(Booking);
             await _context.SaveChangesAsync();
@@ -91,7 +92,7 @@ namespace DM2Projekt.Pages.Bookings
         public JsonResult OnGetSmartboardsByRoom(int roomId)
         {
             var smartboards = _context.Smartboard
-                .Where(sb => sb.RoomId == roomId && sb.IsAvailable == true)
+                .Where(sb => sb.RoomId == roomId && sb.IsAvailable)
                 .Select(sb => new
                 {
                     sb.SmartboardId,
