@@ -38,17 +38,22 @@
     <h3>Your Groups</h3>
     @if (Model.Groups.Any())
     {
-        <ul class="list-group">
+        <div class="row row-cols-1 row-cols-md-2 g-4">
             @foreach (var group in Model.Groups)
             {
-                <li class="list-group-item">
-                    <strong>@group.GroupName</strong>
-                </li>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">@group.GroupName</h5>
+                            <p class="card-text">Click to view more about this group.</p>
+                            <a asp-page="/Groups/Details" asp-route-id="@group.GroupId" class="btn btn-primary">View Group</a>
+                        </div>
+                    </div>
+                </div>
             }
-        </ul>
+        </div>
     }
     else
     {
-        <p>You are not a member of any groups.</p>
+        <p class="text-muted">You are not a member of any groups.</p>
     }
-</div>
