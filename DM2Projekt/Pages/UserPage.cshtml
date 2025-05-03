@@ -68,11 +68,19 @@ else
             </p>
             <p><strong>Group:</strong> @Model.SelectedBooking.Group.GroupName</p>
             <p><strong>Created by:</strong> @Model.SelectedBooking.CreatedByUser.FirstName @Model.SelectedBooking.CreatedByUser.LastName</p>
-            <a href="/UserPage" class="btn btn-outline-secondary mt-3">Close details</a>
+
+            <div class="d-flex gap-2 mt-3">
+                <!-- Delete booking -->
+                <form method="post" asp-page-handler="Delete" asp-route-bookingId="@Model.SelectedBooking.BookingId">
+                    <button type="submit" class="btn btn-danger">Delete booking</button>
+                </form>
+
+                <!-- Close details -->
+                <a href="/UserPage" class="btn btn-outline-secondary">Close details</a>
+            </div>
         </div>
     </div>
 }
-
     <!-- Group Memberships -->
     <h3>Your Groups</h3>
     @if (Model.Groups.Any())

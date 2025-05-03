@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using DM2Projekt.Models;
 using DM2Projekt.Data;
 using DM2Projekt.Pages.Bookings;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DM2Projekt.Pages
 {
@@ -59,6 +60,23 @@ namespace DM2Projekt.Pages
                     .Include(b => b.CreatedByUser)
                     .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.CreatedByUserId == userId);
             }
+
+
+        }
+
+        public async Task<IActionResult> OnPostDeleteAsync(int bookingId)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToPage("/Login");
+
+            var booking = await _context.Booking
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.CreatedByUserId == userId);
+            if (booking != null)
+            {
+                _context.Booking.Remove(booking);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToPage();
         }
     }
 }
