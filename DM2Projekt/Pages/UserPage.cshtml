@@ -4,20 +4,51 @@
     ViewData["Title"] = "User Profile";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h2 class="text-center mb-4">User Profile</h2>
+<div class="container py-4">
+    <h2 class="mb-3">User Profile</h2>
 
-                    <p><strong>Name:</strong> @Model.UserName</p>
-                    <p><strong>Email:</strong> @Model.UserEmail</p>
-                    <p><strong>Role:</strong> @Model.UserRole</p>
-
-                    <a class="btn btn-primary" asp-page="/EditUserProfile">Edit Profile</a>
-                </div>
-            </div>
-        </div>
+    <!-- Profile Details -->
+    <div class="mb-4">
+        <h4>@Model.User.FirstName @Model.User.LastName</h4>
+        <p>Email: @Model.User.Email</p>
+        <p>Password: **hidden**</p>
     </div>
+
+    <!-- Bookings -->
+    <h3>Your Bookings</h3>
+    @if (Model.Bookings.Any())
+    {
+        <div class="list-group mb-4">
+            @foreach (var booking in Model.Bookings)
+            {
+                <a class="list-group-item list-group-item-action">
+                    <h5>@booking.Room.RoomName</h5>
+                    <p>@booking.StartTime?.ToString("ddd, dd MMM yyyy HH:mm") - @booking.EndTime?.ToString("HH:mm")</p>
+                    <p>Group: @booking.Group.GroupName</p>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <p>No bookings found.</p>
+    }
+
+    <!-- Group Memberships -->
+    <h3>Your Groups</h3>
+    @if (Model.Groups.Any())
+    {
+        <ul class="list-group">
+            @foreach (var group in Model.Groups)
+            {
+                <li class="list-group-item">
+                    <strong>@group.GroupName</strong>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>You are not a member of any groups.</p>
+    }
 </div>
