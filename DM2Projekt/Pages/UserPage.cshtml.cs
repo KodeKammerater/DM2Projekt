@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using DM2Projekt.Models;
 using DM2Projekt.Data;
+using DM2Projekt.Pages.Bookings;
 
 namespace DM2Projekt.Pages
 {
@@ -17,8 +18,9 @@ namespace DM2Projekt.Pages
         public User User { get; set; } = default!;
         public List<Booking> Bookings { get; set; } = new();
         public List<Group> Groups { get; set; } = new();
+        public Booking? SelectedBooking { get; set; }
 
-        public async Task OnGetAsync()
+        public async Task OnGetAsync(int? bookingId)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
@@ -48,6 +50,15 @@ namespace DM2Projekt.Pages
 
             // Get the groups the user is part of
             Groups = User.UserGroups.Select(ug => ug.Group).ToList();
+
+            if (bookingId.HasValue)
+            {
+                SelectedBooking = await _context.Booking
+                    .Include(b => b.Room)
+                    .Include(b => b.Group)
+                    .Include(b => b.CreatedByUser)
+                    .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.CreatedByUserId == userId);
+            }
         }
     }
 }

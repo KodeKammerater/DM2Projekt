@@ -5,34 +5,73 @@
 }
 
 <div class="container py-4">
-    <h2 class="mb-3">User Profile</h2>
+    <h2 class="mb-4">User Profile</h2>
 
-    <!-- Profile Details -->
-    <div class="mb-4">
-        <h4>@Model.User.FirstName @Model.User.LastName</h4>
-        <p>Email: @Model.User.Email</p>
-        <p>Password: **hidden**</p>
-    </div>
-
-    <!-- Bookings -->
-    <h3>Your Bookings</h3>
-    @if (Model.Bookings.Any())
-    {
-        <div class="list-group mb-4">
-            @foreach (var booking in Model.Bookings)
-            {
-                <a class="list-group-item list-group-item-action">
-                    <h5>@booking.Room.RoomName</h5>
-                    <p>@booking.StartTime?.ToString("ddd, dd MMM yyyy HH:mm") - @booking.EndTime?.ToString("HH:mm")</p>
-                    <p>Group: @booking.Group.GroupName</p>
-                </a>
-            }
+    <!-- Profile Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex align-items-center">
+            <div class="me-3">
+                <i class="bi bi-person-circle" style="font-size: 3rem; color: #6c757d;"></i>
+            </div>
+            <div>
+                <h4 class="card-title mb-1">@Model.User.FirstName @Model.User.LastName</h4>
+                <p class="mb-1"><i class="bi bi-envelope"></i> @Model.User.Email</p>
+                <p class="mb-0 text-muted"><i class="bi bi-shield-lock"></i> Password: <em>hidden</em></p>
+            </div>
         </div>
-    }
-    else
-    {
-        <p>No bookings found.</p>
-    }
+    </div>
+</div>
+
+<!-- Bookings -->
+<h3 class="mt-4">Your Bookings</h3>
+
+@if (Model.Bookings.Any())
+{
+    <div class="row">
+        @foreach (var booking in Model.Bookings)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@booking.Room.RoomName</h5>
+                        <p class="card-text mb-1">
+                            <strong>Time:</strong><br />
+                            @booking.StartTime?.ToString("ddd, dd MMM yyyy HH:mm") – @booking.EndTime?.ToString("HH:mm")
+                        </p>
+                        <p class="card-text mb-3">
+                            <strong>Group:</strong> @booking.Group.GroupName
+                        </p>
+                        <a href="?bookingId=@booking.BookingId" class="btn btn-primary mt-auto">View details</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p class="text-muted">No bookings found.</p>
+}
+
+@if (Model.SelectedBooking != null)
+{
+    <div class="card mt-4 border-info">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Booking Details</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Room:</strong> @Model.SelectedBooking.Room.RoomName</p>
+            <p>
+                <strong>Time:</strong>
+                @Model.SelectedBooking.StartTime?.ToString("dddd, dd MMM yyyy HH:mm") –
+                @Model.SelectedBooking.EndTime?.ToString("HH:mm")
+            </p>
+            <p><strong>Group:</strong> @Model.SelectedBooking.Group.GroupName</p>
+            <p><strong>Created by:</strong> @Model.SelectedBooking.CreatedByUser.FirstName @Model.SelectedBooking.CreatedByUser.LastName</p>
+            <a href="/UserPage" class="btn btn-outline-secondary mt-3">Close details</a>
+        </div>
+    </div>
+}
 
     <!-- Group Memberships -->
     <h3>Your Groups</h3>
