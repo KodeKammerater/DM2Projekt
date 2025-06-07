@@ -135,4 +135,36 @@ public class UserGroupRulesTests
         var groupExists = context.Group.Any(g => g.GroupId == fakeGroupId);
         Assert.IsFalse(groupExists, "Group doesn't exist");
     }
+
+    [TestMethod]
+    public void UserGroup_Reassignment_Replaces_Old_Entry()
+    {
+        using var context = GetInMemoryContext();
+        var user = context.User.First();
+
+        var group1 = context.Group.First(g => g.GroupName == "Group One"); // original group
+        var group3 = context.Group.First(g => g.GroupName == "Group Three"); // new group
+
+        // Make sure the user is in Group One to start
+        var isInGroup1 = context.UserGroup.Any(ug => ug.UserId == user.UserId && ug.GroupId == group1.GroupId);
+        Assert.IsTrue(isInGroup1, "User should initially be in Group One");
+
+        // Simulate reassignment from Group One to Group Three
+        var oldLink = context.UserGroup.First(ug => ug.UserId == user.UserId && ug.GroupId == group1.GroupId);
+        context.UserGroup.Remove(oldLink);
+        context.UserGroup.Add(new UserGroup
+        {
+            UserId = user.UserId,
+            GroupId = group3.GroupId
+        });
+        context.SaveChanges();
+
+        // Now, user should NOT be in Group One
+        var stillInOldGroup = context.UserGroup.Any(ug => ug.UserId == user.UserId && ug.GroupId == group1.GroupId);
+        Assert.IsFalse(stillInOldGroup, "User should no longer be in Group One");
+
+        // And SHOULD be in Group Three
+        var nowInNewGroup = context.UserGroup.Any(ug => ug.UserId == user.UserId && ug.GroupId == group3.GroupId);
+        Assert.IsTrue(nowInNewGroup, "User should now be in Group Three");
+    }
 }

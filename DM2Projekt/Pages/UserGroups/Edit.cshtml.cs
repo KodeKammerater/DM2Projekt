@@ -19,6 +19,9 @@ public class EditModel : PageModel
     [BindProperty]
     public UserGroup UserGroup { get; set; } = default!;
 
+    [BindProperty]
+    public int OldGroupId { get; set; } // this holds the group the user was in before
+
     public SelectList GroupOptions { get; set; } = default!;
     public User CurrentUser { get; set; } = default!;
     public Group CurrentGroup { get; set; } = default!;
@@ -32,7 +35,7 @@ public class EditModel : PageModel
         if (role != "Admin")
             return RedirectToPage("/UserGroups/Index");
 
-        // fetch the user-group link
+        // grab the current user-group combo
         UserGroup = await _context.UserGroup
             .Include(ug => ug.User)
             .Include(ug => ug.Group)
@@ -41,11 +44,14 @@ public class EditModel : PageModel
         if (UserGroup == null)
             return NotFound();
 
-        // fetch user + group for display
+        // store the old group ID so to remove it later
+        OldGroupId = UserGroup.GroupId;
+
+        // get info to show on the page
         CurrentUser = UserGroup.User;
         CurrentGroup = UserGroup.Group;
 
-        // list all groups except the current one
+        // list of all groups for dropdown
         GroupOptions = new SelectList(_context.Group
             .OrderBy(g => g.GroupName), "GroupId", "GroupName", UserGroup.GroupId);
 
@@ -60,20 +66,21 @@ public class EditModel : PageModel
 
         if (!ModelState.IsValid)
         {
-            // reload dropdown in case of error
+            // reload group list if something goes wrong
             GroupOptions = new SelectList(_context.Group.OrderBy(g => g.GroupName), "GroupId", "GroupName", UserGroup.GroupId);
             return Page();
         }
 
-        // delete old entry
-        var old = await _context.UserGroup.FindAsync(UserGroup.UserId, UserGroup.GroupId);
+        // remove the old user-group record (the one being changed)
+        var old = await _context.UserGroup.FindAsync(UserGroup.UserId, OldGroupId);
         if (old != null)
             _context.UserGroup.Remove(old);
 
-        // add new link
+        // add the new one
         _context.UserGroup.Add(UserGroup);
         await _context.SaveChangesAsync();
 
+        // let user know it worked
         TempData["Success"] = "User was successfully moved to a new group.";
         return RedirectToPage("./Index");
     }

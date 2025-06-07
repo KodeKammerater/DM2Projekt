@@ -10,6 +10,7 @@
 
     <div class="row">
         <div class="col-md-6">
+            <!-- user info box -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <i class="bi bi-person-fill"></i> User Info
@@ -32,19 +33,24 @@
                 </div>
             </div>
 
+            <!-- group reassignment form -->
             <div class="card shadow-sm">
                 <div class="card-header">
                     <i class="bi bi-pencil-square"></i> Reassign Group
                 </div>
                 <div class="card-body">
                     <form method="post">
+                        <!-- these keep track of which user and their old group -->
                         <input type="hidden" asp-for="UserGroup.UserId" />
+                        <input type="hidden" asp-for="OldGroupId" />
 
+                        <!-- dropdown to pick new group -->
                         <div class="mb-3">
                             <label asp-for="UserGroup.GroupId" class="form-label">Select New Group</label>
                             <select asp-for="UserGroup.GroupId" class="form-select" asp-items="Model.GroupOptions"></select>
                         </div>
 
+                        <!-- submit buttons -->
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-circle"></i> Save Changes
                         </button>
