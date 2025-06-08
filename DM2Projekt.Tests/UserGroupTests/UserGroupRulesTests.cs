@@ -167,4 +167,47 @@ public class UserGroupRulesTests
         var nowInNewGroup = context.UserGroup.Any(ug => ug.UserId == user.UserId && ug.GroupId == group3.GroupId);
         Assert.IsTrue(nowInNewGroup, "User should now be in Group Three");
     }
+
+    [TestMethod]
+    public void Creator_Reassignment_Deletes_Old_Group()
+    {
+        using var context = GetInMemoryContext();
+        var user = context.User.First();
+
+        // Get the group the user created and is a member of
+        var createdGroup = context.Group.First(g => g.GroupName == "Group One");
+
+        // Sanity check: group exists and user is its creator
+        Assert.AreEqual(user.UserId, createdGroup.CreatedByUserId);
+        Assert.IsTrue(context.UserGroup.Any(ug => ug.UserId == user.UserId && ug.GroupId == createdGroup.GroupId));
+
+        // Simulate reassignment to a different group
+        var newGroup = context.Group.First(g => g.GroupName == "Group Three");
+
+        // If user is the creator, remove the group and its user links
+        if (createdGroup.CreatedByUserId == user.UserId)
+        {
+            var userLinks = context.UserGroup.Where(ug => ug.GroupId == createdGroup.GroupId);
+            context.UserGroup.RemoveRange(userLinks);
+            context.Group.Remove(createdGroup);
+        }
+
+        // Add new user-group link
+        context.UserGroup.Add(new UserGroup
+        {
+            UserId = user.UserId,
+            GroupId = newGroup.GroupId
+        });
+
+        context.SaveChanges();
+
+        // Old group should be gone
+        var oldGroupExists = context.Group.Any(g => g.GroupId == createdGroup.GroupId);
+        Assert.IsFalse(oldGroupExists, "Old group should be deleted when its creator is reassigned");
+
+        // User should now be in the new group
+        var inNewGroup = context.UserGroup.Any(ug => ug.UserId == user.UserId && ug.GroupId == newGroup.GroupId);
+        Assert.IsTrue(inNewGroup, "User should now be in the new group");
+    }
+
 }

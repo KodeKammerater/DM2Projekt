@@ -20,7 +20,7 @@ public class EditModel : PageModel
     public UserGroup UserGroup { get; set; } = default!;
 
     [BindProperty]
-    public int OldGroupId { get; set; } // this holds the group the user was in before
+    public int OldGroupId { get; set; }
 
     public SelectList GroupOptions { get; set; } = default!;
     public User CurrentUser { get; set; } = default!;
@@ -31,11 +31,12 @@ public class EditModel : PageModel
         if (userId == null || groupId == null)
             return NotFound();
 
+        // only admins allowed to edit this stuff
         var role = HttpContext.Session.GetString("UserRole");
         if (role != "Admin")
             return RedirectToPage("/UserGroups/Index");
 
-        // grab the current user-group combo
+        // grab the current user+group combo
         UserGroup = await _context.UserGroup
             .Include(ug => ug.User)
             .Include(ug => ug.Group)
@@ -44,14 +45,11 @@ public class EditModel : PageModel
         if (UserGroup == null)
             return NotFound();
 
-        // store the old group ID so to remove it later
         OldGroupId = UserGroup.GroupId;
-
-        // get info to show on the page
         CurrentUser = UserGroup.User;
         CurrentGroup = UserGroup.Group;
 
-        // list of all groups for dropdown
+        // for the dropdown
         GroupOptions = new SelectList(_context.Group
             .OrderBy(g => g.GroupName), "GroupId", "GroupName", UserGroup.GroupId);
 
@@ -60,27 +58,43 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        // again, only admins can mess with this
         var role = HttpContext.Session.GetString("UserRole");
         if (role != "Admin")
             return RedirectToPage("/UserGroups/Index");
 
         if (!ModelState.IsValid)
         {
-            // reload group list if something goes wrong
             GroupOptions = new SelectList(_context.Group.OrderBy(g => g.GroupName), "GroupId", "GroupName", UserGroup.GroupId);
             return Page();
         }
 
-        // remove the old user-group record (the one being changed)
-        var old = await _context.UserGroup.FindAsync(UserGroup.UserId, OldGroupId);
-        if (old != null)
-            _context.UserGroup.Remove(old);
+        // find the old group (where user is coming from)
+        var oldGroup = await _context.Group.FindAsync(OldGroupId);
 
-        // add the new one
+        // if user is the one who made that group...
+        if (oldGroup != null && oldGroup.CreatedByUserId == UserGroup.UserId)
+        {
+            // ...then nuke the whole group
+            _context.Group.Remove(oldGroup);
+
+            // also clean up everyone else in it
+            var oldGroupMemberships = _context.UserGroup.Where(ug => ug.GroupId == OldGroupId);
+            _context.UserGroup.RemoveRange(oldGroupMemberships);
+        }
+        else
+        {
+            // just a normal member? just remove the old link
+            var old = await _context.UserGroup.FindAsync(UserGroup.UserId, OldGroupId);
+            if (old != null)
+                _context.UserGroup.Remove(old);
+        }
+
+        // add the new group assignment
         _context.UserGroup.Add(UserGroup);
         await _context.SaveChangesAsync();
 
-        // let user know it worked
+        // all done, high five
         TempData["Success"] = "User was successfully moved to a new group.";
         return RedirectToPage("./Index");
     }
